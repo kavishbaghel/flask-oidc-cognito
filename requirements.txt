@@ -2,3 +2,5 @@ Flask
 itsdangerous
 oauth2client
 six
+python_jwt
+

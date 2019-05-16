@@ -1,5 +1,4 @@
-# Copyright (c) 2016, Patrick Uiterwijk <patrick@puiterwijk.org>,
-#           (c) 2019, Lars Wilhelmsen <lars@sral.org>
+# Copyright (c) 2016, Patrick Uiterwijk <patrick@puiterwijk.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +28,7 @@ from flask_oidc import _json_loads
 
 
 # OpenID Connect Discovery 1.0
-def discover_OP_information(OP_uri,httpFactory=None):
+def discover_OP_information(OP_uri):
     """
     Discovers information about the provided OpenID Provider.
 
@@ -40,12 +39,6 @@ def discover_OP_information(OP_uri,httpFactory=None):
 
     .. versionadded:: 1.0
     """
-    http = None
-    if httpFactory is not None and callable(httpFactory):
-      http = httpFactory()
-    else:
-      http = httplib2.Http()
-      
-    _, content = http.request(
+    _, content = httplib2.Http().request(
         '%s/.well-known/openid-configuration' % OP_uri)
     return _json_loads(content)

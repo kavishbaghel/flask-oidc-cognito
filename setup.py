@@ -36,6 +36,7 @@ setup(
         'itsdangerous',
         'oauth2client',
         'six',
+        'pyjwt'
     ],
     tests_require=['nose', 'mock'],
     entry_points={

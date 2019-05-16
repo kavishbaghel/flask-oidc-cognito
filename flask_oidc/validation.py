@@ -1,5 +1,4 @@
-# Copyright (c) 2016, Patrick Uiterwijk <patrick@puiterwijk.org>,
-#           (c) 2019, Lars Wilhelmsen <lars@sral.org>
+# Copyright (c) 2019, Lars Wilhelmsen <lars@sral.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,29 +22,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import httplib2
+from functools import partial
 
-from flask_oidc import _json_loads
+import python_jwt as jwt, jwcrypto.jwk as jwk, datetime
 
-
-# OpenID Connect Discovery 1.0
-def discover_OP_information(OP_uri,httpFactory=None):
-    """
-    Discovers information about the provided OpenID Provider.
-
-    :param OP_uri: The base URI of the Provider information is requested for.
-    :type OP_uri: str
-    :returns: The contents of the Provider metadata document.
-    :rtype: dict
-
-    .. versionadded:: 1.0
-    """
-    http = None
-    if httpFactory is not None and callable(httpFactory):
-      http = httpFactory()
-    else:
-      http = httplib2.Http()
-      
-    _, content = http.request(
-        '%s/.well-known/openid-configuration' % OP_uri)
-    return _json_loads(content)
+def validate_token(jwks, token):
+  

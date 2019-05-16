@@ -1,5 +1,4 @@
-# Copyright (c) 2016, Patrick Uiterwijk <patrick@puiterwijk.org>,
-#           (c) 2019, Lars Wilhelmsen <lars@sral.org>
+# Copyright (c) 2019, Lars Wilhelmsen <lars@sral.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,29 +22,22 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import httplib2
-
+from .discovery import discover_OP_information
 from flask_oidc import _json_loads
 
-
-# OpenID Connect Discovery 1.0
-def discover_OP_information(OP_uri,httpFactory=None):
-    """
-    Discovers information about the provided OpenID Provider.
-
-    :param OP_uri: The base URI of the Provider information is requested for.
-    :type OP_uri: str
-    :returns: The contents of the Provider metadata document.
-    :rtype: dict
-
-    .. versionadded:: 1.0
-    """
-    http = None
-    if httpFactory is not None and callable(httpFactory):
-      http = httpFactory()
-    else:
-      http = httplib2.Http()
-      
-    _, content = http.request(
-        '%s/.well-known/openid-configuration' % OP_uri)
-    return _json_loads(content)
+def retrieve_jwks(OP_uri, httpFactory=None):
+  """
+  Retrieves the potential keys used to sign issued tokens from the OP.
+  """
+  http = None
+  if httpFactory is not None and callable(httpFactory):
+    http = httpFactory()
+  else:
+    http = httplib2.Http()
+  
+  wellknown_uris = discover_OP_information(OP_uri)
+  jwks_uri = wellknown_uris['jwks_uri']
+  
+  _, content = http.request(jwks_uri)
+  
+  return _json_loads(content)
