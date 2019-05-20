@@ -39,7 +39,6 @@ from oauth2client.client import flow_from_clientsecrets, OAuth2WebServerFlow,\
     AccessTokenRefreshError, OAuth2Credentials
 import httplib2
 from itsdangerous import JSONWebSignatureSerializer, BadSignature
-import pyjwt
 
 __all__ = ['OpenIDConnect', 'MemoryCredentials']
 
