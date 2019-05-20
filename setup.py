@@ -35,8 +35,7 @@ setup(
         'Flask',
         'itsdangerous',
         'oauth2client',
-        'six',
-        'pyjwt'
+        'six'
     ],
     tests_require=['nose', 'mock'],
     entry_points={
