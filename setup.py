@@ -21,13 +21,13 @@ with io.open(os.path.join(here, 'README.rst')) as f:
     readme = f.read()
 
 setup(
-    name='flask-oidc',
-    description='OpenID Connect extension for Flask',
+    name='flask-oidc-ex',
+    description='OpenID Connect extension for Flask - Extended',
     long_description=readme,
-    url='https://github.com/puiterwijk/flask-oidc',
-    author='Erica Ehrhardt, Patrick Uiterwijk',
+    url='https://github.com/larsw/flask-oidc',
+    author='Erica Ehrhardt, Patrick Uiterwijk, Lars Wilhelmsen',
     author_email='patrick@puiterwijk.org',
-    version='1.4.0',
+    version='1.0.0',
     packages=[
         'flask_oidc',
     ],
@@ -49,11 +49,7 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
