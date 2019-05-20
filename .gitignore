@@ -1,3 +1,4 @@
+.tox
 venv
 /client_secrets.json
 /docs/_build

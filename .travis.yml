@@ -1,6 +1,5 @@
 language: python
 python:
-- '2.7'
 - '3.3'
 - '3.4'
 - '3.5'
@@ -8,10 +7,11 @@ python:
 script: python setup.py test
 deploy:
   provider: pypi
-  user: puiterwijk
+  user: larsw 
   password:
-    secure: J2e+OVA6s5D14HH3Z551seTG/1Aaj6NUEjmc8FussEVUIobc0h76kG3yY0NAy5lzkIJ9JWTYHiKl3Rx8tteMlHKxh38Awc+bQqng8dJd6pJKO67pa6247LCbpYXlUjYlPwZlbkq+5ms8G5JblBlR6WCDdf4IQLSDBTusLDopcYY=
+    secure: a+7GDQT/X0sHDOfPOXR663AXrlCviH0+WyNVrqN4GSDf0qD6hTLwnorSaMxj99z3EY2oMThvLGwX0lElTUBzp2ebhsI19VKs29kmwmHcG43bB++LFtAyD3U1WQgIzhyDXcADt5ZeSkzMBREWe4WNBrSSJRqTAdUZpO6+a9nGARg72JJZaHz7ndkT0V61zOpKxxgkAG4WAyu8udUXxznd6UkEljft0fIRE3s5/wRQqcrUCcFdAn44bMi5oSSlfWIcrrl7DcZD33sbpQp1sI/FH8rlmAESFdDA1FjIa6sem2lFryO2vUjcfleJBArdvJZ6Y/21LA+mIShClq6zsnaA07MEsQFOwC9k08bwKIk8nIbSldGKxMvMXv/TfMbdFOvyC0otHZxqym2r1+V9t87RShBffUqkslMfw0wOyBGxd+d76VdMh+1i2Ja1g7sEC3BmEzo+iJNeWDhZiWcyGo12u4el/NdVSuK6HZhyswTACYCCJTKygab/P8/WGQmv/TYhgwWBwPObbNcKJesm3tNI0fPwff1BhL9U99NUz0XBwjRpnwLHqMN77HFsxYqzIpOvrYul8b0G3G3sXYuS+ycRPvcbb6pifeGysHVkrFGOFbzNuoKMJMXFFk3dSQt42LZ6MuGSiWWfJB0wGu7dU96DtQDBcHBRsZZvRkT0vX2Q13c=
   on:
     tags: true
-    repo: puiterwijk/flask-oidc
+    branch: master
+    repo: larsw/flask-oidc
   distributions: sdist bdist_wheel

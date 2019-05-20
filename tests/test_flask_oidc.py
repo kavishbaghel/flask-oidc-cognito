@@ -13,7 +13,6 @@ from nose.tools import nottest
 
 from .app import create_app
 
-
 last_request = None
 with resource_stream(__name__, 'client_secrets.json') as f:
     client_secrets = json.load(codecs.getreader('utf-8')(f))

@@ -24,12 +24,13 @@ setup(
     name='flask-oidc-ex',
     description='OpenID Connect extension for Flask - Extended',
     long_description=readme,
-    url='https://github.com/larsw/flask-oidc',
+    long_description_content_type='text/x-rst',
+    url='https://github.com/larsw/flask-oidc-ex',
     author='Erica Ehrhardt, Patrick Uiterwijk, Lars Wilhelmsen',
-    author_email='patrick@puiterwijk.org',
-    version='1.0.0',
+    author_email='lars@sral.org',
+    version='0.1.0',
     packages=[
-        'flask_oidc',
+        'flask_oidc_ex',
     ],
     install_requires=[
         'Flask',
@@ -37,9 +38,16 @@ setup(
         'oauth2client',
         'six'
     ],
+    extras_require={
+      'dev': [
+        'twine',
+        'tox',
+        'bumpversion'
+      ]
+    },
     tests_require=['nose', 'mock'],
     entry_points={
-        'console_scripts': ['oidc-register=flask_oidc.registration_util:main'],
+        'console_scripts': ['oidc-register=flask_oidc_ex.registration_util:main'],
     },
     zip_safe=False,
     classifiers=[
