@@ -9,6 +9,7 @@ deploy:
   user: larsw 
   password:
     secure: a+7GDQT/X0sHDOfPOXR663AXrlCviH0+WyNVrqN4GSDf0qD6hTLwnorSaMxj99z3EY2oMThvLGwX0lElTUBzp2ebhsI19VKs29kmwmHcG43bB++LFtAyD3U1WQgIzhyDXcADt5ZeSkzMBREWe4WNBrSSJRqTAdUZpO6+a9nGARg72JJZaHz7ndkT0V61zOpKxxgkAG4WAyu8udUXxznd6UkEljft0fIRE3s5/wRQqcrUCcFdAn44bMi5oSSlfWIcrrl7DcZD33sbpQp1sI/FH8rlmAESFdDA1FjIa6sem2lFryO2vUjcfleJBArdvJZ6Y/21LA+mIShClq6zsnaA07MEsQFOwC9k08bwKIk8nIbSldGKxMvMXv/TfMbdFOvyC0otHZxqym2r1+V9t87RShBffUqkslMfw0wOyBGxd+d76VdMh+1i2Ja1g7sEC3BmEzo+iJNeWDhZiWcyGo12u4el/NdVSuK6HZhyswTACYCCJTKygab/P8/WGQmv/TYhgwWBwPObbNcKJesm3tNI0fPwff1BhL9U99NUz0XBwjRpnwLHqMN77HFsxYqzIpOvrYul8b0G3G3sXYuS+ycRPvcbb6pifeGysHVkrFGOFbzNuoKMJMXFFk3dSQt42LZ6MuGSiWWfJB0wGu7dU96DtQDBcHBRsZZvRkT0vX2Q13c=
+  skip_existing: true
   on:
     tags: true
     branch: master
