@@ -9,7 +9,6 @@ from flask_oidc_ex import OpenIDConnect
 
 oidc = None
 
-
 def index():
     return "too many secrets", 200, {
         'Content-Type': 'text/plain; charset=utf-8'

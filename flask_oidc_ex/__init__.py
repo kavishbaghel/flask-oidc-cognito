@@ -100,14 +100,21 @@ class OpenIDConnect(object):
     """
     The core OpenID Connect client object.
     """
-    def __init__(self, app=None, credentials_store=None, http=None, time=None,
+    def __init__(self, app=None, credentials_store=None, httpFactory=None, time=None,
                  urandom=None):
+        logger.debug('__init__')
         self.credentials_store = credentials_store\
             if credentials_store is not None\
             else MemoryCredentials()
 
-        if http is not None:
-            warn('HTTP argument is deprecated and unused', DeprecationWarning)
+        if httpFactory is not None:
+          if callable(httpFactory):
+            logger.debug('custom httpFactory installed')
+            self.httpFactory = httpFactory
+          else:
+            raise Exception('The httpFactory argument must be a function')
+        else:
+          self.httpFactory = lambda: httplib2.Http()
         if time is not None:
             warn('time argument is deprecated and unused', DeprecationWarning)
         if urandom is not None:
@@ -308,7 +315,7 @@ class OpenIDConnect(object):
         if '_oidc_userinfo' in g:
             return g._oidc_userinfo
 
-        http = httplib2.Http()
+        http = self.httpFactory()
         if access_token is None:
             try:
                 credentials = OAuth2Credentials.from_json(
@@ -447,7 +454,7 @@ class OpenIDConnect(object):
 
             # refresh and store credentials
             try:
-                credentials.refresh(httplib2.Http())
+                credentials.refresh(self.httpFactory())
                 if credentials.id_token:
                     id_token = credentials.id_token
                 else:
@@ -918,7 +925,7 @@ class OpenIDConnect(object):
             if self.client_secrets['client_secret'] is not None:
                 request['client_secret'] = self.client_secrets['client_secret']
 
-        resp, content = httplib2.Http().request(
+        resp, content = self.httpFactory().request(
             self.client_secrets['token_introspection_uri'], 'POST',
             urlencode(request), headers=headers)
         # TODO: Cache this reply
