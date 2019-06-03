@@ -22,9 +22,15 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from .discovery import discover_OP_information
-from flask_oidc import _json_loads
+import httplib2
+from cachetools import cached, TTLCache
 
+from .discovery import discover_OP_information
+from .utils import _json_loads
+
+# cache answer for 10 hours
+# TODO pull cache ttl from config
+@cached(cache=TTLCache(maxsize=128, ttl=6000))
 def retrieve_jwks(OP_uri, httpFactory=None):
   """
   Retrieves the potential keys used to sign issued tokens from the OP.
@@ -35,9 +41,11 @@ def retrieve_jwks(OP_uri, httpFactory=None):
   else:
     http = httplib2.Http()
   
-  wellknown_uris = discover_OP_information(OP_uri)
-  jwks_uri = wellknown_uris['jwks_uri']
+  disco = discover_OP_information(OP_uri)
+  jwks_uri = disco['jwks_uri']
   
   _, content = http.request(jwks_uri)
   
-  return _json_loads(content)
+  keys = _json_loads(content)['keys']
+  # return keys as dict with kid as key.
+  return {key['kid']:key for key in keys}

@@ -40,14 +40,11 @@ from oauth2client.client import flow_from_clientsecrets, OAuth2WebServerFlow,\
 import httplib2
 from itsdangerous import JSONWebSignatureSerializer, BadSignature
 
+from .utils import _json_loads
+
 __all__ = ['OpenIDConnect', 'MemoryCredentials']
 
 logger = logging.getLogger(__name__)
-
-def _json_loads(content):
-    if not isinstance(content, str):
-        content = content.decode('utf-8')
-    return json.loads(content)
 
 class MemoryCredentials(dict):
     """

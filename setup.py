@@ -36,7 +36,9 @@ setup(
         'Flask',
         'itsdangerous',
         'oauth2client',
-        'six'
+        'six',
+        'python-jose',
+        'cachetools'
     ],
     extras_require={
       'dev': [
