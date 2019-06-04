@@ -37,14 +37,17 @@ setup(
         'itsdangerous',
         'oauth2client',
         'six',
-        'python-jose',
+        'python-jwt',
+        'jwcrypto',
         'cachetools'
     ],
     extras_require={
       'dev': [
         'twine',
         'tox',
-        'bumpversion'
+        'bumpversion',
+        'nose',
+        'nosy'
       ]
     },
     tests_require=['nose', 'mock'],

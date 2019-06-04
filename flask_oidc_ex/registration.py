@@ -139,6 +139,7 @@ def register_client(provider_info, redirect_uris):
         'userinfo_uri': provider_info['userinfo_endpoint'],
         'redirect_uris': redirect_uris,
         'issuer': provider_info['issuer'],
+        'jwks_uri': provider_info['jwks_uri']
     }}
 
     return json_file

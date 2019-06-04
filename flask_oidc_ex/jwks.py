@@ -24,9 +24,9 @@
 
 import httplib2
 from cachetools import cached, TTLCache
+from jwcrypto.jwk import JWKSet
 
 from .discovery import discover_OP_information
-from .utils import _json_loads
 
 # cache answer for 10 hours
 # TODO pull cache ttl from config
@@ -46,6 +46,4 @@ def retrieve_jwks(OP_uri, httpFactory=None):
   
   _, content = http.request(jwks_uri)
   
-  keys = _json_loads(content)['keys']
-  # return keys as dict with kid as key.
-  return {key['kid']:key for key in keys}
+  return JWKSet.from_json(content)

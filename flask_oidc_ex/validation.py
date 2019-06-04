@@ -22,7 +22,25 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import python_jwt as jwt, jwcrypto.jwk as jwk, datetime
+import python_jwt as jwt
+import jwcrypto.jwk as jwk
+import datetime
 
-def validate_token(jwks, token):
+def validate_token(jwkset, token):
   
+  headers. _ = jwt.process_jwt(token)
+  alg = headers['alg']
+  kid = headers['kid']
+  
+  if not alg:
+    raise Exception('No \'alg\' claim in JWT token header')
+  if not kid:
+    raise Exception('No \'kid\' claim in JWT token header')
+    
+  json_key = jwkset.get_key(kid)
+  
+  algorithms = [alg]
+  
+  # Exception raised on invalid token input will be bubble up to the caller.
+  _, payload = jwt.verify_token(token, json_key, algorithms)
+  return payload

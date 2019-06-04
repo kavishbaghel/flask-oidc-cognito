@@ -1,5 +1,6 @@
 # Copyright (c) 2014-2015, Erica Ehrhardt
 # Copyright (c) 2016, Patrick Uiterwijk <patrick@puiterwijk.org>
+# Copyright (c) 2019, Lars Wilhelmsen <lars@sral.org>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,6 +42,8 @@ import httplib2
 from itsdangerous import JSONWebSignatureSerializer, BadSignature
 
 from .utils import _json_loads
+from .jwks import retrieve_jwks
+from .validation import validate_token
 
 __all__ = ['OpenIDConnect', 'MemoryCredentials']
 
@@ -89,9 +92,7 @@ class ErrStr(str):
         """The py3 method for bool()."""
         return False
 
-
 GOOGLE_ISSUERS = ['accounts.google.com', 'https://accounts.google.com']
-
 
 class OpenIDConnect(object):
     """
@@ -156,6 +157,8 @@ class OpenIDConnect(object):
         app.config.setdefault("OIDC_EXTRA_REQUEST_AUTH_PARAMS", {})
         # Configuration for resource servers
         app.config.setdefault('OIDC_RESOURCE_SERVER_ONLY', False)
+        # 'online' (token introspection) or 'offline' (token validation)
+        app.config.setdefault('OIDC_RESOURCE_SERVER_VALIDATION_MODE', 'online') 
         app.config.setdefault('OIDC_RESOURCE_CHECK_AUD', False)
 
         # We use client_secret_post, because that's what the Google
@@ -803,44 +806,44 @@ class OpenIDConnect(object):
         valid_token = False
         has_required_scopes = False
         if token:
-            try:
-                token_info = self._get_token_info(token)
-            except Exception as ex:
-                token_info = {'active': False}
-                logger.error('ERROR: Unable to get token info')
-                logger.error(str(ex))
+          try:
+              token_info = self._get_token_info(token)
+          except Exception as ex:
+              token_info = {'active': False}
+              logger.error('ERROR: Unable to get token info')
+              logger.error(str(ex))
 
-            valid_token = token_info.get('active', False)
+          valid_token = token_info.get('active', False)
 
-            if 'aud' in token_info and \
-                    current_app.config['OIDC_RESOURCE_CHECK_AUD']:
-                valid_audience = False
-                aud = token_info['aud']
-                clid = self.client_secrets['client_id']
-                if isinstance(aud, list):
-                    valid_audience = clid in aud
-                else:
-                    valid_audience = clid == aud
+          if 'aud' in token_info and \
+                  current_app.config['OIDC_RESOURCE_CHECK_AUD']:
+              valid_audience = False
+              aud = token_info['aud']
+              clid = self.client_secrets['client_id']
+              if isinstance(aud, list):
+                  valid_audience = clid in aud
+              else:
+                  valid_audience = clid == aud
 
-                if not valid_audience:
-                    logger.error('Refused token because of invalid '
-                                 'audience')
-                    valid_token = False
+              if not valid_audience:
+                  logger.error('Refused token because of invalid '
+                               'audience')
+                  valid_token = False
 
-            if valid_token:
-                token_scopes = token_info.get('scope', '').split(' ')
-            else:
-                token_scopes = []
-            has_required_scopes = scopes_required.issubset(
-                set(token_scopes))
+          if valid_token:
+              token_scopes = token_info.get('scope', '').split(' ')
+          else:
+              token_scopes = []
+          has_required_scopes = scopes_required.issubset(
+              set(token_scopes))
 
-            if not has_required_scopes:
-                logger.debug('Token missed required scopes')
+          if not has_required_scopes:
+              logger.debug('Token missed required scopes')
 
-        if (valid_token and has_required_scopes):
-            g.oidc_token_info = token_info
-            return True
-
+          if (valid_token and has_required_scopes):
+              g.oidc_token_info = token_info
+              return True
+        
         if not valid_token:
             return 'Token required but invalid'
         elif not has_required_scopes:
@@ -901,6 +904,8 @@ class OpenIDConnect(object):
         return wrapper
 
     def _get_token_info(self, token):
+      validation_mode = current_app.config['OIDC_RESOURCE_SERVER_VALIDATION_MODE']
+      if validation_mode == 'online':                    
         # We hardcode to use client_secret_post, because that's what the Google
         # oauth2client library defaults to
         request = {'token': token}
@@ -927,3 +932,18 @@ class OpenIDConnect(object):
             urlencode(request), headers=headers)
         # TODO: Cache this reply
         return _json_loads(content)
+      
+      elif validation_mode == 'offline':
+        jwks_uri = self.client_secrets['jwks_uri']
+        if jwks_uri is None:
+          raise Exception('No \'jwks_uri\' defined in client_secrets')
+          
+        jwks = retrieve_jwks(jwks_uri)
+        if jwks is None:
+          raise Exception(f'The {jwks_uri} endpoint returned no valid JWKs')
+          
+          payload = validate_token(jwks, token)
+          payload['active'] = True # Fake introspection response
+          return payload
+      else:
+        raise Exception('OIDC_RESOURCE_SERVER_VALIDATION_MODE must be set to either \'online\' or \'offline\'')
