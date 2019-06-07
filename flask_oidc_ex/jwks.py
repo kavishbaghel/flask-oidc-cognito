@@ -41,7 +41,7 @@ def retrieve_jwks(OP_uri, httpFactory=None):
   else:
     http = httplib2.Http()
   
-  disco = discover_OP_information(OP_uri)
+  disco = discover_OP_information(OP_uri, httpFactory)
   jwks_uri = disco['jwks_uri']
   
   _, content = http.request(jwks_uri)

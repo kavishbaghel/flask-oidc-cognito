@@ -28,7 +28,7 @@ import datetime
 
 def validate_token(jwkset, token):
   
-  headers. _ = jwt.process_jwt(token)
+  headers, _ = jwt.process_jwt(token)
   alg = headers['alg']
   kid = headers['kid']
   
@@ -42,5 +42,5 @@ def validate_token(jwkset, token):
   algorithms = [alg]
   
   # Exception raised on invalid token input will be bubble up to the caller.
-  _, payload = jwt.verify_token(token, json_key, algorithms)
+  _, payload = jwt.verify_jwt(token, json_key, algorithms)
   return payload
