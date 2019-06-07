@@ -13,5 +13,5 @@ deploy:
   on:
     tags: true
     branch: master
-    repo: larsw/flask-oidc # pypi repo name - not github...
+    repo: larsw/flask-oidc-ex # pypi repo name - not github...
   distributions: sdist bdist_wheel
