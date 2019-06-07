@@ -940,7 +940,7 @@ class OpenIDConnect(object):
           
         jwks = retrieve_jwks(jwks_uri)
         if jwks is None:
-          raise Exception(f'The {jwks_uri} endpoint returned no valid JWKs')
+          raise Exception('The {jwks_uri} endpoint returned no valid JWKs' % jwks_uri)
           
           payload = validate_token(jwks, token)
           payload['active'] = True # Fake introspection response
