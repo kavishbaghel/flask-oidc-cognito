@@ -26,7 +26,7 @@ import json
 import logging
 
 from flask import Flask, g
-from flask_oidc import OpenIDConnect
+from flask_oidc_ex import OpenIDConnect
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -38,8 +38,16 @@ app.config.update({
     'OIDC_CLIENT_SECRETS': 'client_secrets.json',
     'OIDC_ID_TOKEN_COOKIE_SECURE': False,
     'OIDC_REQUIRE_VERIFIED_EMAIL': False,
-    'OIDC_OPENID_REALM': 'http://localhost:5000/oidc_callback',
-    'OIDC_RESOURCE_SERVER_VALIDATION_MODE': 'offline'
+    'OIDC_VALID_ISSUERS': [
+        'http://localhost:8080/auth/realms/demo'
+    ],
+    'OIDC_RESOURCE_SERVER_VALIDATION_MODE': 'offline',
+    'OIDC_USER_INFO_ENABLED': False,
+    'OIDC_SCOPES': [
+        'openid',
+        'email',
+        'profile',
+    ]
 })
 oidc = OpenIDConnect(app)
 
@@ -57,9 +65,9 @@ def hello_world():
 @app.route('/private')
 @oidc.require_login
 def hello_me():
-    info = oidc.user_getinfo(['email', 'openid_id'])
-    return ('Hello, %s (%s)! <a href="/">Return</a>' %
-            (info.get('email'), info.get('openid_id')))
+    info = oidc.user_getinfo(['email', 'given_name', 'family_name'])
+    return ('Hello, %s %s (%s)! <a href="/">Return</a>' %
+            (info.get('given'), info.get('family_name'), info.get('email')))
 
 
 @app.route('/api')
