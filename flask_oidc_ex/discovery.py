@@ -29,7 +29,7 @@ from flask_oidc_ex import _json_loads
 
 
 # OpenID Connect Discovery 1.0
-def discover_OP_information(OP_uri,httpFactory=None):
+def discover_OP_information(OP_uri, httpFactory=None):
     """
     Discovers information about the provided OpenID Provider.
 
@@ -42,10 +42,10 @@ def discover_OP_information(OP_uri,httpFactory=None):
     """
     http = None
     if httpFactory is not None and callable(httpFactory):
-      http = httpFactory()
+        http = httpFactory()
     else:
-      http = httplib2.Http()
-      
+        http = httplib2.Http()
+
     _, content = http.request(
         '%s/.well-known/openid-configuration' % OP_uri)
     return _json_loads(content)

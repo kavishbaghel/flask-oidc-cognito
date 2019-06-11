@@ -49,6 +49,7 @@ __all__ = ['OpenIDConnect', 'MemoryCredentials']
 
 logger = logging.getLogger(__name__)
 
+
 class MemoryCredentials(dict):
     """
     Non-persistent local credentials store.
@@ -62,6 +63,7 @@ class DummySecretsCache(object):
     """
     oauth2client secrets cache
     """
+
     def __init__(self, client_secrets):
         self.client_secrets = client_secrets
 
@@ -84,6 +86,7 @@ class ErrStr(str):
     this ErrStr class, which are basic strings except for their bool() results:
     they return False.
     """
+
     def __nonzero__(self):
         """The py2 method for bool()."""
         return False
@@ -92,12 +95,15 @@ class ErrStr(str):
         """The py3 method for bool()."""
         return False
 
+
 GOOGLE_ISSUERS = ['accounts.google.com', 'https://accounts.google.com']
+
 
 class OpenIDConnect(object):
     """
     The core OpenID Connect client object.
     """
+
     def __init__(self, app=None, credentials_store=None, httpFactory=None, time=None,
                  urandom=None):
         logger.debug('__init__')
@@ -106,13 +112,13 @@ class OpenIDConnect(object):
             else MemoryCredentials()
 
         if httpFactory is not None:
-          if callable(httpFactory):
-            logger.debug('custom httpFactory installed')
-            self.httpFactory = httpFactory
-          else:
-            raise Exception('The httpFactory argument must be a function')
+            if callable(httpFactory):
+                logger.debug('custom httpFactory installed')
+                self.httpFactory = httpFactory
+            else:
+                raise Exception('The httpFactory argument must be a function')
         else:
-          self.httpFactory = lambda: httplib2.Http()
+            self.httpFactory = lambda: httplib2.Http()
         if time is not None:
             warn('time argument is deprecated and unused', DeprecationWarning)
         if urandom is not None:
@@ -158,12 +164,13 @@ class OpenIDConnect(object):
         # Configuration for resource servers
         app.config.setdefault('OIDC_RESOURCE_SERVER_ONLY', False)
         # 'online' (token introspection) or 'offline' (token validation)
-        app.config.setdefault('OIDC_RESOURCE_SERVER_VALIDATION_MODE', 'online') 
+        app.config.setdefault('OIDC_RESOURCE_SERVER_VALIDATION_MODE', 'online')
         app.config.setdefault('OIDC_RESOURCE_CHECK_AUD', False)
 
         # We use client_secret_post, because that's what the Google
         # oauth2client library defaults to
-        app.config.setdefault('OIDC_INTROSPECTION_AUTH_METHOD', 'client_secret_post')
+        app.config.setdefault(
+            'OIDC_INTROSPECTION_AUTH_METHOD', 'client_secret_post')
         app.config.setdefault('OIDC_TOKEN_TYPE_HINT', 'access_token')
 
         if not 'openid' in app.config['OIDC_SCOPES']:
@@ -340,7 +347,6 @@ class OpenIDConnect(object):
         g._oidc_userinfo = info
 
         return info
-
 
     def get_cookie_id_token(self):
         """
@@ -587,7 +593,8 @@ class OpenIDConnect(object):
         extra_params = {
             'state': urlsafe_b64encode(json.dumps(state).encode('utf-8')),
         }
-        extra_params.update(current_app.config['OIDC_EXTRA_REQUEST_AUTH_PARAMS'])
+        extra_params.update(
+            current_app.config['OIDC_EXTRA_REQUEST_AUTH_PARAMS'])
         if current_app.config['OIDC_GOOGLE_APPS_DOMAIN']:
             extra_params['hd'] = current_app.config['OIDC_GOOGLE_APPS_DOMAIN']
         if current_app.config['OIDC_OPENID_REALM']:
@@ -704,7 +711,8 @@ class OpenIDConnect(object):
         try:
             session_csrf_token = session.get('oidc_csrf_token')
 
-            state = _json_loads(urlsafe_b64decode(request.args['state'].encode('utf-8')))
+            state = _json_loads(urlsafe_b64decode(
+                request.args['state'].encode('utf-8')))
             csrf_token = state['csrf_token']
 
             code = request.args['code']
@@ -806,44 +814,44 @@ class OpenIDConnect(object):
         valid_token = False
         has_required_scopes = False
         if token:
-          try:
-              token_info = self._get_token_info(token)
-          except Exception as ex:
-              token_info = {'active': False}
-              logger.error('ERROR: Unable to get token info')
-              logger.error(str(ex))
+            try:
+                token_info = self._get_token_info(token)
+            except Exception as ex:
+                token_info = {'active': False}
+                logger.error('ERROR: Unable to get token info')
+                logger.error(str(ex))
 
-          valid_token = token_info.get('active', False)
+            valid_token = token_info.get('active', False)
 
-          if 'aud' in token_info and \
-                  current_app.config['OIDC_RESOURCE_CHECK_AUD']:
-              valid_audience = False
-              aud = token_info['aud']
-              clid = self.client_secrets['client_id']
-              if isinstance(aud, list):
-                  valid_audience = clid in aud
-              else:
-                  valid_audience = clid == aud
+            if 'aud' in token_info and \
+                    current_app.config['OIDC_RESOURCE_CHECK_AUD']:
+                valid_audience = False
+                aud = token_info['aud']
+                clid = self.client_secrets['client_id']
+                if isinstance(aud, list):
+                    valid_audience = clid in aud
+                else:
+                    valid_audience = clid == aud
 
-              if not valid_audience:
-                  logger.error('Refused token because of invalid '
-                               'audience')
-                  valid_token = False
+                if not valid_audience:
+                    logger.error('Refused token because of invalid '
+                                 'audience')
+                    valid_token = False
 
-          if valid_token:
-              token_scopes = token_info.get('scope', '').split(' ')
-          else:
-              token_scopes = []
-          has_required_scopes = scopes_required.issubset(
-              set(token_scopes))
+            if valid_token:
+                token_scopes = token_info.get('scope', '').split(' ')
+            else:
+                token_scopes = []
+            has_required_scopes = scopes_required.issubset(
+                set(token_scopes))
 
-          if not has_required_scopes:
-              logger.debug('Token missed required scopes')
+            if not has_required_scopes:
+                logger.debug('Token missed required scopes')
 
-          if (valid_token and has_required_scopes):
-              g.oidc_token_info = token_info
-              return True
-        
+            if (valid_token and has_required_scopes):
+                g.oidc_token_info = token_info
+                return True
+
         if not valid_token:
             return 'Token required but invalid'
         elif not has_required_scopes:
@@ -852,7 +860,7 @@ class OpenIDConnect(object):
             return 'Something went wrong checking your token'
 
     def accept_token(self, require_token=False, scopes_required=None,
-                           render_errors=True):
+                     render_errors=True):
         """
         Use this to decorate view functions that should accept OAuth2 tokens,
         this will most likely apply to API functions.
@@ -884,7 +892,8 @@ class OpenIDConnect(object):
             def decorated(*args, **kwargs):
                 token = None
                 if 'Authorization' in request.headers and request.headers['Authorization'].startswith('Bearer '):
-                    token = request.headers['Authorization'].split(None,1)[1].strip()
+                    token = request.headers['Authorization'].split(None, 1)[
+                        1].strip()
                 if 'access_token' in request.form:
                     token = request.form['access_token']
                 elif 'access_token' in request.args:
@@ -904,46 +913,50 @@ class OpenIDConnect(object):
         return wrapper
 
     def _get_token_info(self, token):
-      validation_mode = current_app.config['OIDC_RESOURCE_SERVER_VALIDATION_MODE']
-      if validation_mode == 'online':                    
-        # We hardcode to use client_secret_post, because that's what the Google
-        # oauth2client library defaults to
-        request = {'token': token}
-        headers = {'Content-type': 'application/x-www-form-urlencoded'}
+        validation_mode = current_app.config['OIDC_RESOURCE_SERVER_VALIDATION_MODE']
+        if validation_mode == 'online':
+            # We hardcode to use client_secret_post, because that's what the Google
+            # oauth2client library defaults to
+            request = {'token': token}
+            headers = {'Content-type': 'application/x-www-form-urlencoded'}
 
-        hint = current_app.config['OIDC_TOKEN_TYPE_HINT']
-        if hint != 'none':
-            request['token_type_hint'] = hint
+            hint = current_app.config['OIDC_TOKEN_TYPE_HINT']
+            if hint != 'none':
+                request['token_type_hint'] = hint
 
-        auth_method = current_app.config['OIDC_INTROSPECTION_AUTH_METHOD'] 
-        if (auth_method == 'client_secret_basic'):
-            basic_auth_string = '%s:%s' % (self.client_secrets['client_id'], self.client_secrets['client_secret'])
-            basic_auth_bytes = bytearray(basic_auth_string, 'utf-8')
-            headers['Authorization'] = 'Basic %s' % b64encode(basic_auth_bytes).decode('utf-8')
-        elif (auth_method == 'bearer'):
-            headers['Authorization'] = 'Bearer %s' % token
-        elif (auth_method == 'client_secret_post'):
-            request['client_id'] = self.client_secrets['client_id']
-            if self.client_secrets['client_secret'] is not None:
-                request['client_secret'] = self.client_secrets['client_secret']
+            auth_method = current_app.config['OIDC_INTROSPECTION_AUTH_METHOD']
+            if (auth_method == 'client_secret_basic'):
+                basic_auth_string = '%s:%s' % (
+                    self.client_secrets['client_id'], self.client_secrets['client_secret'])
+                basic_auth_bytes = bytearray(basic_auth_string, 'utf-8')
+                headers['Authorization'] = 'Basic %s' % b64encode(
+                    basic_auth_bytes).decode('utf-8')
+            elif (auth_method == 'bearer'):
+                headers['Authorization'] = 'Bearer %s' % token
+            elif (auth_method == 'client_secret_post'):
+                request['client_id'] = self.client_secrets['client_id']
+                if self.client_secrets['client_secret'] is not None:
+                    request['client_secret'] = self.client_secrets['client_secret']
 
-        resp, content = self.httpFactory().request(
-            self.client_secrets['token_introspection_uri'], 'POST',
-            urlencode(request), headers=headers)
-        # TODO: Cache this reply
-        return _json_loads(content)
-      
-      elif validation_mode == 'offline':
-        jwks_uri = self.client_secrets['jwks_uri']
-        if jwks_uri is None:
-          raise Exception('No \'jwks_uri\' defined in client_secrets')
-          
-        jwks = retrieve_jwks(jwks_uri)
-        if jwks is None:
-          raise Exception('The {jwks_uri} endpoint returned no valid JWKs' % jwks_uri)
-          
-          payload = validate_token(jwks, token)
-          payload['active'] = True # Fake introspection response
-          return payload
-      else:
-        raise Exception('OIDC_RESOURCE_SERVER_VALIDATION_MODE must be set to either \'online\' or \'offline\'')
+            resp, content = self.httpFactory().request(
+                self.client_secrets['token_introspection_uri'], 'POST',
+                urlencode(request), headers=headers)
+            # TODO: Cache this reply
+            return _json_loads(content)
+
+        elif validation_mode == 'offline':
+            jwks_uri = self.client_secrets['jwks_uri']
+            if jwks_uri is None:
+                raise Exception('No \'jwks_uri\' defined in client_secrets')
+
+            jwks = retrieve_jwks(jwks_uri)
+            if jwks is None:
+                raise Exception(
+                    'The {jwks_uri} endpoint returned no valid JWKs' % jwks_uri)
+
+                payload = validate_token(jwks, token)
+                payload['active'] = True  # Fake introspection response
+                return payload
+        else:
+            raise Exception(
+                'OIDC_RESOURCE_SERVER_VALIDATION_MODE must be set to either \'online\' or \'offline\'')

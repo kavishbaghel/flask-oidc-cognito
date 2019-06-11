@@ -32,18 +32,18 @@ from .discovery import discover_OP_information
 # TODO pull cache ttl from config
 @cached(cache=TTLCache(maxsize=128, ttl=6000))
 def retrieve_jwks(OP_uri, httpFactory=None):
-  """
-  Retrieves the potential keys used to sign issued tokens from the OP.
-  """
-  http = None
-  if httpFactory is not None and callable(httpFactory):
-    http = httpFactory()
-  else:
-    http = httplib2.Http()
-  
-  disco = discover_OP_information(OP_uri, httpFactory)
-  jwks_uri = disco['jwks_uri']
-  
-  _, content = http.request(jwks_uri)
-  
-  return JWKSet.from_json(content)
+    """
+    Retrieves the potential keys used to sign issued tokens from the OP.
+    """
+    http = None
+    if httpFactory is not None and callable(httpFactory):
+        http = httpFactory()
+    else:
+        http = httplib2.Http()
+
+    disco = discover_OP_information(OP_uri, httpFactory)
+    jwks_uri = disco['jwks_uri']
+
+    _, content = http.request(jwks_uri)
+
+    return JWKSet.from_json(content)
