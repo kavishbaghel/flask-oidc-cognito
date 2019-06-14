@@ -22,28 +22,19 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import httplib2
+from httplib2 import Http
 from cachetools import cached, TTLCache
 from jwcrypto.jwk import JWKSet
-
-from .discovery import discover_OP_information
 
 # cache answer for 10 hours
 # TODO pull cache ttl from config
 @cached(cache=TTLCache(maxsize=128, ttl=6000))
-def retrieve_jwks(OP_uri, httpFactory=None):
+def retrieve_jwks(jwks_url, httpFactory=Http):
     """
     Retrieves the potential keys used to sign issued tokens from the OP.
     """
-    http = None
-    if httpFactory is not None and callable(httpFactory):
-        http = httpFactory()
-    else:
-        http = httplib2.Http()
+    http = httpFactory()
 
-    disco = discover_OP_information(OP_uri, httpFactory)
-    jwks_uri = disco['jwks_uri']
-
-    _, content = http.request(jwks_uri)
+    _, content = http.request(jwks_url)
 
     return JWKSet.from_json(content)

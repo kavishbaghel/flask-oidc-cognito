@@ -1,11 +1,17 @@
 from flask_oidc_ex.jwks import retrieve_jwks
+from nose.tools import nottest
 from httplib2 import Http
 
-op_url = 'https://accounts.google.com/'
+from flask_oidc_ex.discovery import discover_OP_information
 
-# def http_factory_ssl_cert_validation_disabled():
-#   return Http(ca_certs="/etc/pki/tls/certs/ca-bundle.crt")
+jwks_url = 'https://www.googleapis.com/oauth2/v3/certs'
+
+
+@nottest
+def http_factory_ssl_cert_validation_disabled():
+    return Http(disable_ssl_certificate_validation=True)
+
 
 def test_can_retrieve_jwks_from_google():
-  jwkset = retrieve_jwks(op_url) # , http_factory_ssl_cert_validation_disabled
-  assert jwkset is not None
+    jwkset = retrieve_jwks(jwks_url, http_factory_ssl_cert_validation_disabled)
+    assert jwkset is not None

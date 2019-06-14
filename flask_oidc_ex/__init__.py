@@ -42,6 +42,7 @@ import httplib2
 from itsdangerous import JSONWebSignatureSerializer, BadSignature
 
 from .utils import _json_loads
+from .discovery import discover_OP_information
 from .jwks import retrieve_jwks
 from .validation import validate_token
 
@@ -945,18 +946,23 @@ class OpenIDConnect(object):
             return _json_loads(content)
 
         elif validation_mode == 'offline':
-            jwks_uri = self.client_secrets['jwks_uri']
+            issuer = self.client_secrets['op_uri']
+            if issuer is None:
+                raise Exception('No \'op_uri\' defined in client_secrets')
+
+            disco = discover_OP_information(issuer, self.httpFactory)
+            jwks_uri = disco['jwks_uri']
+
             if jwks_uri is None:
-                raise Exception('No \'jwks_uri\' defined in client_secrets')
+                raise Exception('No \'jwks_uri\' available in the openid-configuration returned by the issuer.')
 
-            jwks = retrieve_jwks(jwks_uri)
+            jwks = retrieve_jwks(jwks_uri, self.httpFactory)
             if jwks is None:
-                raise Exception(
-                    'The {jwks_uri} endpoint returned no valid JWKs' % jwks_uri)
+                raise Exception(f'The {jwks_uri} endpoint returned no valid JWKs')
 
-                payload = validate_token(jwks, token)
-                payload['active'] = True  # Fake introspection response
-                return payload
+            payload = validate_token(jwks, token)
+            payload['active'] = True  # Fake introspection response
+            return payload
         else:
             raise Exception(
                 'OIDC_RESOURCE_SERVER_VALIDATION_MODE must be set to either \'online\' or \'offline\'')
