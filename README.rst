@@ -14,7 +14,11 @@ flask-oidc-ex
    :alt: Documentation Status
 
 .. image:: https://img.shields.io/travis/larsw/flask-oidc-ex.svg?style=flat
-  :target: https://travis-ci.org/larsw/flask-oidc-ex
+   :target: https://travis-ci.org/larsw/flask-oidc-ex
+
+.. image:: https://snyk.io//test/github/larsw/flask-oidc-ex/badge.svg?targetFile=requirements.txt
+   :target: https://snyk.io//test/github/larsw/flask-oidc-ex?targetFile=requirements.txt
+   :alt: Known Vulnerabilities
 
 This library is a fork of the `flask-oidc <https://github.com/puiterwijk/flask-oidc>` library, and should work with any standards compliant OpenID Connect provider.
 
