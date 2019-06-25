@@ -970,9 +970,12 @@ class OpenIDConnect(object):
                 'OIDC_RESOURCE_SERVER_VALIDATION_MODE must be set to either \'online\' or \'offline\'')
 
 class OfflineValidatingResourceServer(OpenIDConnect):
-    def __init__(self, app, op_uri):
+    def __init__(self, app, op_uri):        
         if not isinstance(app, Flask):
             raise ValueError('The app argument must be a Flask instance.')
+            
+        super(OfflineValidatingResourceServer, self).__init__(app)
+            
         app.config.update({
             'OIDC_RESOURCE_SERVER_ONLY': True,
             'OIDC_RESOURCE_SERVER_VALIDATION_MODE': 'offline',
