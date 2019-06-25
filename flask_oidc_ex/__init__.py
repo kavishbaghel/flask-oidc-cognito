@@ -39,7 +39,7 @@ from flask import request, session, redirect, url_for, g, current_app, abort
 from oauth2client.client import flow_from_clientsecrets, OAuth2WebServerFlow,\
     AccessTokenRefreshError, OAuth2Credentials
 import httplib2
-from itsdangerous import JSONWebSignatureSerializer, BadSignature
+from itsdangerous import JSONWebSignatureSerializer, BadSignature, SignatureExpired
 
 from .utils import _json_loads
 from .discovery import discover_OP_information
@@ -154,6 +154,7 @@ class OpenIDConnect(object):
         app.config.setdefault('OIDC_COOKIE_SECURE', True)
         app.config.setdefault('OIDC_VALID_ISSUERS',
                               (self.client_secrets.get('issuer') or
+                               self.client_secrets.get('op_uri') or
                                GOOGLE_ISSUERS))
         app.config.setdefault('OIDC_CLOCK_SKEW', 60)  # 1 minute
         app.config.setdefault('OIDC_REQUIRE_VERIFIED_EMAIL', False)
