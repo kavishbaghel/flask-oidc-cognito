@@ -156,6 +156,7 @@ class OpenIDConnect(object):
                               (self.client_secrets.get('issuer') or
                                self.client_secrets.get('op_uri') or
                                GOOGLE_ISSUERS))
+        app.config.setdefault('OIDC_PROVIDER', self.client_secrets.get('op_uri'))
         app.config.setdefault('OIDC_CLOCK_SKEW', 60)  # 1 minute
         app.config.setdefault('OIDC_REQUIRE_VERIFIED_EMAIL', False)
         app.config.setdefault('OIDC_OPENID_REALM', None)
@@ -947,9 +948,9 @@ class OpenIDConnect(object):
             return _json_loads(content)
 
         elif validation_mode == 'offline':
-            issuer = self.client_secrets['op_uri']
+            issuer = current_app.config['OIDC_PROVIDER']
             if issuer is None:
-                raise Exception('No \'op_uri\' defined in client_secrets')
+                raise Exception('No \'op_uri\' defined in client_secrets or OIDC_PROVIDER set.')
 
             disco = discover_OP_information(issuer, self.httpFactory)
             jwks_uri = disco['jwks_uri']
@@ -967,3 +968,16 @@ class OpenIDConnect(object):
         else:
             raise Exception(
                 'OIDC_RESOURCE_SERVER_VALIDATION_MODE must be set to either \'online\' or \'offline\'')
+
+class OfflineValidatingResourceServer(OpenIDConnect):
+    def __init__(self, app, op_uri):
+        if not isinstance(app, Flask):
+            raise ValueError('The app argument must be a Flask instance.')
+        if not op_uri:
+            raise ValueError('the op_uri must be set pointing to the OpenID Connnect Provider base URL (excluding /.well-known/openid_configuration)')
+        app.config.update({
+            'OIDC_PROVIDER': op_uri,
+            'OIDC_RESOURCE_SERVER_ONLY': True,
+            'OIDC_RESOURCE_SERVER_VALIDATION_MODE': 'offline',
+            'OIDC_USER_INFO_ENABLED': False    
+        })

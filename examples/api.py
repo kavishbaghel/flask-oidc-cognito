@@ -32,23 +32,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 app.config.update({
-    'SECRET_KEY': 'SomethingNotEntirelySecret',
     'TESTING': True,
     'DEBUG': True,
-    'OIDC_CLIENT_SECRETS': 'client_secrets.json',
-    'OIDC_ID_TOKEN_COOKIE_SECURE': False,
-    'OIDC_REQUIRE_VERIFIED_EMAIL': False,
-    'OIDC_VALID_ISSUERS': [
-        'http://localhost:8080/auth/realms/demo'
-    ],
+    'OIDC_PROVIDER': 'http://localhost:8080/auth/realms/demo',
     'OIDC_RESOURCE_SERVER_ONLY': True,
     'OIDC_RESOURCE_SERVER_VALIDATION_MODE': 'offline',
-    'OIDC_USER_INFO_ENABLED': False,
-    'OIDC_SCOPES': [
-        'openid',
-        'email',
-        'profile',
-    ]
+    'OIDC_USER_INFO_ENABLED': False    
 })
 
 oidc = OpenIDConnect(app)
@@ -60,4 +49,3 @@ def echo_token_content():
 
 if __name__ == '__main__':
     app.run()
-
