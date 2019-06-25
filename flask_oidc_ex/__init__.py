@@ -973,11 +973,12 @@ class OfflineValidatingResourceServer(OpenIDConnect):
     def __init__(self, app, op_uri):
         if not isinstance(app, Flask):
             raise ValueError('The app argument must be a Flask instance.')
-        if not op_uri:
-            raise ValueError('the op_uri must be set pointing to the OpenID Connnect Provider base URL (excluding /.well-known/openid_configuration)')
         app.config.update({
-            'OIDC_PROVIDER': op_uri,
             'OIDC_RESOURCE_SERVER_ONLY': True,
             'OIDC_RESOURCE_SERVER_VALIDATION_MODE': 'offline',
             'OIDC_USER_INFO_ENABLED': False    
         })
+        if op_uri:
+            app.config.update({
+                'OIDC_PROVIDER': op_uri                
+            })
