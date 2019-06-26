@@ -35,7 +35,7 @@ from warnings import warn
 import calendar
 
 from six.moves.urllib.parse import urlencode
-from flask import request, session, redirect, url_for, g, current_app, abort
+from flask import Flask, request, session, redirect, url_for, g, current_app, abort
 from oauth2client.client import flow_from_clientsecrets, OAuth2WebServerFlow,\
     AccessTokenRefreshError, OAuth2Credentials
 import httplib2
@@ -140,9 +140,15 @@ class OpenIDConnect(object):
         :param app: The application to initialize.
         :type app: Flask
         """
+        secrets_cache = None
         secrets = self.load_secrets(app)
-        self.client_secrets = list(secrets.values())[0]
-        secrets_cache = DummySecretsCache(secrets)
+        if secrets is not None:
+            self.client_secrets = list(secrets.values())[0]
+            secrets_cache = DummySecretsCache(secrets)
+        else:
+            self.client_secrets = dict()
+            if 'OIDC_PROVIDER' in app.config:
+                self.client_secrets['issuer'] = app.config['OIDC_PROVIDER']
 
         # Set some default configuration options
         app.config.setdefault('OIDC_SCOPES', ['openid', 'email'])
@@ -176,7 +182,7 @@ class OpenIDConnect(object):
             'OIDC_INTROSPECTION_AUTH_METHOD', 'client_secret_post')
         app.config.setdefault('OIDC_TOKEN_TYPE_HINT', 'access_token')
 
-        if not 'openid' in app.config['OIDC_SCOPES']:
+        if 'openid' not in app.config['OIDC_SCOPES']:
             raise ValueError('The value "openid" must be in the OIDC_SCOPES')
 
         # register callback route and cookie-setting decorator
@@ -186,11 +192,12 @@ class OpenIDConnect(object):
             app.after_request(self._after_request)
 
         # Initialize oauth2client
-        self.flow = flow_from_clientsecrets(
-            app.config['OIDC_CLIENT_SECRETS'],
-            scope=app.config['OIDC_SCOPES'],
-            cache=secrets_cache)
-        assert isinstance(self.flow, OAuth2WebServerFlow)
+        if secrets_cache is not None:
+            self.flow = flow_from_clientsecrets(
+                app.config['OIDC_CLIENT_SECRETS'],
+                scope=app.config['OIDC_SCOPES'],
+                cache=secrets_cache)
+            assert isinstance(self.flow, OAuth2WebServerFlow)
 
         # create signers using the Flask secret key
         self.extra_data_serializer = JSONWebSignatureSerializer(
@@ -205,6 +212,8 @@ class OpenIDConnect(object):
 
     def load_secrets(self, app):
         # Load client_secrets.json to pre-initialize some configuration
+        if 'OIDC_CLIENT_SECRETS' not in app.config:
+            return None  # Could not load client_secrets
         content = app.config['OIDC_CLIENT_SECRETS']
         if isinstance(content, dict):
             return content
@@ -969,19 +978,22 @@ class OpenIDConnect(object):
             raise Exception(
                 'OIDC_RESOURCE_SERVER_VALIDATION_MODE must be set to either \'online\' or \'offline\'')
 
+
 class OfflineValidatingResourceServer(OpenIDConnect):
-    def __init__(self, app, op_uri):        
+    """
+    Offline-validating Flask Resource Server middleware.
+    """
+
+    def __init__(self, app, op_uri, **kwargs):
         if not isinstance(app, Flask):
-            raise ValueError('The app argument must be a Flask instance.')
-            
-        super(OfflineValidatingResourceServer, self).__init__(app)
-            
+            raise ValueError('The app argument must be a Flask instance.')            
+        super().__init__(app, **kwargs)
         app.config.update({
             'OIDC_RESOURCE_SERVER_ONLY': True,
             'OIDC_RESOURCE_SERVER_VALIDATION_MODE': 'offline',
-            'OIDC_USER_INFO_ENABLED': False    
+            'OIDC_USER_INFO_ENABLED': False
         })
         if op_uri:
             app.config.update({
-                'OIDC_PROVIDER': op_uri                
+                'OIDC_PROVIDER': op_uri
             })
