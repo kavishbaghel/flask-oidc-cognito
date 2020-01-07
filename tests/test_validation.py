@@ -21,4 +21,4 @@ def test_validate_token():
     keyset = JWKSet()
     keyset.add(key)
 
-    assert validate_token(keyset, token)
+    assert validate_token(keyset, token, clock_skew_seconds=60)

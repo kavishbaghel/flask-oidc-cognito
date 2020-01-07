@@ -26,8 +26,7 @@ import python_jwt as jwt
 import jwcrypto.jwk as jwk
 import datetime
 
-
-def validate_token(jwkset, token):
+def validate_token(jwkset, token, clock_skew_seconds):
 
     headers, _ = jwt.process_jwt(token)
     alg = headers['alg']
@@ -43,5 +42,5 @@ def validate_token(jwkset, token):
     algorithms = [alg]
 
     # Exception raised on invalid token input will be bubble up to the caller.
-    _, payload = jwt.verify_jwt(token, json_key, algorithms)
+    _, payload = jwt.verify_jwt(token, json_key, algorithms, datetime.timedelta(seconds=clock_skew_seconds))
     return payload

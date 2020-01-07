@@ -926,6 +926,7 @@ class OpenIDConnect(object):
 
     def _get_token_info(self, token):
         validation_mode = current_app.config['OIDC_RESOURCE_SERVER_VALIDATION_MODE']
+        clock_skew_seconds = current_app.config['OIDC_CLOCK_SKEW']
         if validation_mode == 'online':
             # We hardcode to use client_secret_post, because that's what the Google
             # oauth2client library defaults to
@@ -971,7 +972,7 @@ class OpenIDConnect(object):
             if jwks is None:
                 raise Exception('The {0} endpoint returned no valid JWKs' % jwks_uri)
 
-            payload = validate_token(jwks, token)
+            payload = validate_token(jwks, token, clock_skew_seconds)
             payload['active'] = True  # Fake introspection response
             return payload
         else:
