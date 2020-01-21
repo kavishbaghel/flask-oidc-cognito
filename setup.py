@@ -28,7 +28,7 @@ setup(
     url='https://github.com/larsw/flask-oidc-ex',
     author='Erica Ehrhardt, Patrick Uiterwijk, Lars Wilhelmsen',
     author_email='lars@sral.org',
-    version='0.5.7',
+    version='0.5.8',
     packages=[
         'flask_oidc_ex',
     ],
