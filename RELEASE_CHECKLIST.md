@@ -1,6 +1,7 @@
 # Release Checklist
 
 0. Ensure we're on the ```master``` branch.
+0. Ensure that the ```wheel``` package is installed in the venv.
 1. Build locally```python setup.py sdist bdist_wheel```.
 2. Run ```tox``` to ensure that the package builds and can be used with the Python 3.x env.
 3. Update the ```CHANGELOG.rst```.
