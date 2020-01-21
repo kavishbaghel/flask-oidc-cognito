@@ -26,6 +26,20 @@ import python_jwt as jwt
 import jwcrypto.jwk as jwk
 import datetime
 
+allowed_algs = [
+  'RS256',
+  'RS384',
+  'RS512',
+  'PS256',
+  'PS384',
+  'PS512',
+  'ES256',
+  'ES384',
+  'ES512',
+  'HS256',
+  'HS384',
+  'HS512']
+
 def validate_token(jwkset, token, clock_skew_seconds):
 
     headers, _ = jwt.process_jwt(token)
@@ -34,6 +48,10 @@ def validate_token(jwkset, token, clock_skew_seconds):
 
     if not alg:
         raise Exception('No \'alg\' claim in JWT token header')
+    
+    if not alg in allowed_algs:
+        raise Exception(f'{alg} is not an allowed algorithm.')
+
     if not kid:
         raise Exception('No \'kid\' claim in JWT token header')
 
