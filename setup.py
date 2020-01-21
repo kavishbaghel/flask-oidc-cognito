@@ -43,6 +43,7 @@ setup(
     ],
     extras_require={
       'dev': [
+        'wheel',
         'twine',
         'tox',
         'bumpversion',
