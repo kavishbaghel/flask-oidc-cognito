@@ -50,7 +50,7 @@ def validate_token(jwkset, token, clock_skew_seconds):
         raise Exception('No \'alg\' claim in JWT token header')
     
     if not alg in allowed_algs:
-        raise Exception(f'{alg} is not an allowed algorithm.')
+        raise Exception('\'%s\' is not an allowed algorithm.' % alg)
 
     if not kid:
         raise Exception('No \'kid\' claim in JWT token header')
