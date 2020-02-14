@@ -839,7 +839,13 @@ class OpenIDConnect(object):
                     current_app.config['OIDC_RESOURCE_CHECK_AUD']:
                 valid_audience = False
                 aud = token_info['aud']
-                clid = self.client_secrets['client_id']
+                clid = current_app.config.get('OIDC_CLIENT_ID')
+                if not clid:
+                  clid = self.client_secrets.get('client_id')
+
+                if not clid:
+                  raise Exception('No \'client_id\' defined in client_secrets or OIDC_CLIENT_ID set.')
+
                 if isinstance(aud, list):
                     valid_audience = clid in aud
                 else:
