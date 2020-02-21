@@ -61,4 +61,9 @@ def validate_token(jwkset, token, clock_skew_seconds):
 
     # Exception raised on invalid token input will be bubble up to the caller.
     _, payload = jwt.verify_jwt(token, json_key, algorithms, datetime.timedelta(seconds=clock_skew_seconds))
+
+    typ = payload.get('typ', None)
+    if typ != 'Bearer':
+       raise Exception('The token is not intended for autorization (\'typ\' should be \'Bearer\', not \'%s\')' % typ)
+
     return payload
