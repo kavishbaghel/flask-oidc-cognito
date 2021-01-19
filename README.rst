@@ -29,9 +29,9 @@ It also provides a way of providing a factory function for _httplib2.Http_ insta
 
 It has been tested with:
 
-* `Keycloak <https://www.keycloak.com/>`_
+* `Amazon Cognito`_
 
 Project status
 ==============
 
-This project is in active development.
+This project is in not in active development.
