@@ -44,7 +44,7 @@ from itsdangerous import JSONWebSignatureSerializer, BadSignature, SignatureExpi
 from .utils import _json_loads
 from .discovery import discover_OP_information
 from .jwks import retrieve_jwks
-from .validation import validate_token
+from .jwt import validate_token
 
 __all__ = ['OpenIDConnect', 'MemoryCredentials']
 
@@ -968,17 +968,17 @@ class OpenIDConnect(object):
             if issuer is None:
                 raise Exception('No \'op_uri\' defined in client_secrets or OIDC_PROVIDER set.')
 
-            disco = discover_OP_information(issuer, self.httpFactory)
-            jwks_uri = disco['jwks_uri']
+            #disco = discover_OP_information(issuer, self.httpFactory)
+            #jwks_uri = disco['jwks_uri']
 
-            if jwks_uri is None:
-                raise Exception('No \'jwks_uri\' available in the openid-configuration returned by the issuer.')
+            #if jwks_uri is None:
+            #    raise Exception('No \'jwks_uri\' available in the openid-configuration returned by the issuer.')
 
-            jwks = retrieve_jwks(jwks_uri, self.httpFactory)
-            if jwks is None:
-                raise Exception('The {0} endpoint returned no valid JWKs' % jwks_uri)
+            #jwks = retrieve_jwks(jwks_uri, self.httpFactory)
+            #if jwks is None:
+            #    raise Exception('The {0} endpoint returned no valid JWKs' % jwks_uri)
 
-            payload = validate_token(jwks, token, clock_skew_seconds)
+            payload = validate_token(token, issuer=issuer, audience=self.client_secrets['redirect_uris'], client_ids=self.client_secrets['client_id'])
             payload['active'] = True  # Fake introspection response
             return payload
         else:

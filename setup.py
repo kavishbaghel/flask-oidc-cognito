@@ -21,16 +21,16 @@ with io.open(os.path.join(here, 'README.rst')) as f:
     readme = f.read()
 
 setup(
-    name='flask-oidc-ex',
+    name='flask-oidc-cognito',
     description='OpenID Connect extension for Flask - Extended',
     long_description=readme,
     long_description_content_type='text/x-rst',
-    url='https://github.com/larsw/flask-oidc-ex',
-    author='Erica Ehrhardt, Patrick Uiterwijk, Lars Wilhelmsen',
-    author_email='lars@sral.org',
+    url='https://github.com/piyushroshan/flask-oidc-cognito',
+    author='Erica Ehrhardt, Patrick Uiterwijk, Lars Wilhelmsen, Roshan Piyush',
+    author_email='piyush.roshan@gmail.com',
     version='0.6.2',
     packages=[
-        'flask_oidc_ex',
+        'flask_oidc_cognito',
     ],
     install_requires=[
         'Flask',
@@ -52,7 +52,7 @@ setup(
     },
     tests_require=['nose', 'mock'],
     entry_points={
-        'console_scripts': ['oidc-register=flask_oidc_ex.registration_util:main'],
+        'console_scripts': ['oidc-register=flask_oidc_cognito.registration_util:main'],
     },
     zip_safe=False,
     classifiers=[

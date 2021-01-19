@@ -23,7 +23,7 @@ Installation
 
 Install the extension with `pip`::
 
-    $ pip install Flask-OIDC
+    $ pip install Flask-OIDC-cognito
 
 
 
@@ -33,33 +33,39 @@ How to use
 To integrate Flask-OpenID into your application you need to create an
 instance of the :class:`OpenID` object first::
 
-    from flask_oidc import OpenIDConnect
+    from flask_oidc_cognito import OpenIDConnect
     oidc = OpenIDConnect(app)
-
+    
 
 Alternatively the object can be instantiated without the application in
 which case it can later be registered for an application with the
-:meth:`~flask_oidc.OpenIDConnect.init_app` method.
+:meth:`~flask_oidc_cognito.OpenIDConnect.init_app` method.
 
 Note that you should probably provide the library with a place to store the
 credentials it has retrieved for the user. These need to be stored in a place
 where the user themselves or an attacker can not get to them.
 To provide this, give an object that has ``__setitem__`` and ``__getitem__``
-dict APIs implemented as second argument to the :meth:`~flask_oidc.OpenIDConnect.__init__`
+dict APIs implemented as second argument to the :meth:`~flask_oidc_cognito.OpenIDConnect.__init__`
 call.
 Without this, the library will only work on a single thread, and only retain
 sessions until the server is restarted.
 
+For example
+
+    from sqlitedict import SqliteDict 
+    oidc = OpenIDConnect(app, credentials_store=SqliteDict('users.db', autocommit=True))
+
+
 Using this library is very simple: you can use
-:data:`~flask_oidc.OpenIDConnect.user_loggedin` to determine whether a user is currently
+:data:`~flask_oidc_cognito.OpenIDConnect.user_loggedin` to determine whether a user is currently
 logged in using OpenID Connect.
 
-If the user is logged in, you an use :meth:`~flask_oidc.OpenIDConnect.user_getfield` and
-:meth:`~flask_oidc.OpenIDConnect.user_getinfo` to get information about the currently
+If the user is logged in, you an use :meth:`~flask_oidc_cognito.OpenIDConnect.user_getfield` and
+:meth:`~flask_oidc_cognito.OpenIDConnect.user_getinfo` to get information about the currently
 logged in user.
 
 If the user is not logged in, you can send them to any function that is
-decorated with :meth:`~flask_oidc.OpenIDConnect.require_login` to get them automatically
+decorated with :meth:`~flask_oidc_cognito.OpenIDConnect.require_login` to get them automatically
 redirected to login.
 
 
@@ -109,7 +115,7 @@ Resource server
 
 Also, if you have implemented an API that can should be able to accept tokens
 issued by the OpenID Connect provider, just decorate those API functions with
-:meth:`~flask_oidc.OpenIDConnect.accept_token`::
+:meth:`~flask_oidc_cognito.OpenIDConnect.accept_token`::
 
     @app.route('/api')
     @oidc.accept_token()
@@ -277,17 +283,17 @@ API References
 
 The full API reference:
 
-.. automodule:: flask_oidc
+.. automodule:: flask_oidc_cognito
    :members:
 
 Discovery
 ---------
-.. automodule:: flask_oidc.discovery
+.. automodule:: flask_oidc_cognito.discovery
    :members:
 
 Registration
 ------------
-.. automodule:: flask_oidc.registration
+.. automodule:: flask_oidc_cognito.registration
    :members:
 
 
