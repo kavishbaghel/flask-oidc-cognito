@@ -244,6 +244,8 @@ class OpenIDConnect(object):
 
         .. versionadded:: 1.0
         """
+        if access_token is None and self._access_token:
+            access_token = self._access_token
         info = self.user_getinfo([field], access_token)
         return info.get(field)
 
@@ -263,6 +265,8 @@ class OpenIDConnect(object):
 
         .. versionadded:: 1.0
         """
+        if access_token is None and self._access_token:
+            access_token = self._access_token
         if g.oidc_id_token is None and access_token is None:
             raise Exception('User was not authenticated')
         info = {}
@@ -293,6 +297,8 @@ class OpenIDConnect(object):
         .. versionadded:: 1.2
         """
         try:
+            if self._access_token:
+                return self._access_token
             credentials = OAuth2Credentials.from_json(
                 self.credentials_store[g.oidc_id_token['sub']])
             return credentials.access_token
@@ -335,6 +341,8 @@ class OpenIDConnect(object):
             return g._oidc_userinfo
 
         http = self.httpFactory()
+        if access_token is None and self._access_token:
+           access_token = self._access_token
         if access_token is None:
             try:
                 credentials = OAuth2Credentials.from_json(
@@ -350,34 +358,63 @@ class OpenIDConnect(object):
             resp, content = http.request(
                 self.client_secrets['userinfo_uri'],
                 "POST",
-                body=urlencode({"access_token": access_token}),
-                headers={'Content-Type': 'application/x-www-form-urlencoded'})
+                headers={
+                   'Authorization': 'Bearer %s' % access_token
+                })
 
-        logger.debug('Retrieved user info: %s' % content)
         info = _json_loads(content)
-
+        if access_token:
+           info.update(g.oidc_token_info)
         g._oidc_userinfo = info
+        logger.debug('Retrieved user info: %s' % info)
 
         return info
 
-    def get_cookie_id_token(self):
+    def get_cookie_or_token(self):
         """
         .. deprecated:: 1.0
            Use :func:`user_getinfo` instead.
         """
-        warn('You are using a deprecated function (get_cookie_id_token). '
+        warn('You are using a deprecated function (get_cookie_or_token). '
              'Please reconsider using this', DeprecationWarning)
-        return self._get_cookie_id_token()
+        return self._get_cookie_or_token()
 
-    def _get_cookie_id_token(self):
+    def _get_cookie_or_token(self):
         try:
             id_token_cookie = request.cookies.get(current_app.config[
                 'OIDC_ID_TOKEN_COOKIE_NAME'])
             if not id_token_cookie:
                 # Do not error if we were unable to get the cookie.
                 # The user can debug this themselves.
+                token = None
+                if 'Authorization' in request.headers and request.headers['Authorization'].startswith('Bearer '):
+                    token = request.headers['Authorization'].split(None, 1)[1].strip()
+                if 'access_token' in request.form:
+                    token = request.form['access_token']
+                elif 'access_token' in request.args:
+                    token = request.args['access_token']
+                if token:
+                    logger.debug("Found token: %s" % token)
+                    self._api_request = True
+                    issuer = current_app.config['OIDC_PROVIDER']
+                    if issuer is None:
+                        raise Exception('No \'op_uri\' defined in client_secrets or OIDC_PROVIDER set.')
+                    try:
+                        logger.debug("Cookie not found trying token %s" % token)
+                        payload = self.validate_token(token)
+                        #, issuer=issuer, audience=self.client_secrets['redirect_uris'], client_ids=self.client_secrets['client_id'])
+                        self._access_token = token
+                        self._retrieve_userinfo()
+                        return None 
+                    except Exception as e:
+                        logger.debug("Error using token")
+                        logger.debug(str(e))
+                        abort(401)
                 return None
-            return self.cookie_serializer.loads(id_token_cookie)
+            else:
+                cookie = self.cookie_serializer.loads(id_token_cookie)
+                logger.debug("Cookie : %s" % cookie)
+                return cookie
         except SignatureExpired:
             logger.debug("Invalid ID token cookie", exc_info=True)
             return None
@@ -408,6 +445,9 @@ class OpenIDConnect(object):
         # insecure cookies.
         # We don't define OIDC_ID_TOKEN_COOKIE_SECURE in init_app, because we
         # don't want people to find it easily.
+        if self._api_request:
+            self._access_token = None
+            return response
         cookie_secure = (current_app.config['OIDC_COOKIE_SECURE'] and
                          current_app.config.get('OIDC_ID_TOKEN_COOKIE_SECURE',
                                                 True))
@@ -433,6 +473,8 @@ class OpenIDConnect(object):
         return response
 
     def _before_request(self):
+        self._api_request = False
+        self._access_token = None
         g.oidc_id_token = None
         self.authenticate_or_redirect()
 
@@ -453,9 +495,15 @@ class OpenIDConnect(object):
         if request.endpoint in frozenset(['_oidc_callback', '_oidc_error']):
             return None
 
+        self._api_request = False
         # retrieve signed ID token cookie
-        id_token = self._get_cookie_id_token()
+        id_token = self._get_cookie_or_token()
+        logger.debug("Get ID Token %s" % id_token)
         if id_token is None:
+            logger.debug("ID Token is NONE")
+            if self._api_request:
+                logger.debug("API Request, skipping further steps")
+                return None
             return self.redirect_to_auth_server(request.url)
 
         # ID token expired
@@ -487,6 +535,7 @@ class OpenIDConnect(object):
                         id_token['exp'] = calendar.timegm(
                             credentials.token_expiry.timetuple())
                 self.credentials_store[id_token['sub']] = credentials.to_json()
+                print(self.credentials_store[id_token['sub']])
                 self._set_cookie_id_token(id_token)
             except AccessTokenRefreshError:
                 # Can't refresh. Wipe credentials and redirect user to IdP
@@ -512,10 +561,11 @@ class OpenIDConnect(object):
         """
         @wraps(view_func)
         def decorated(*args, **kwargs):
-            if g.oidc_id_token is None:
+            if g.oidc_id_token is None and self._access_token is None:
                 return self.redirect_to_auth_server(request.url)
             return view_func(*args, **kwargs)
         return decorated
+
     # Backwards compatibility
     check = require_login
     """
@@ -585,6 +635,9 @@ class OpenIDConnect(object):
         .. deprecated:: 1.0
            Use :func:`require_login` instead.
         """
+        if self._api_request:
+            logger.debug("API Request skipping redirect and aborting with 401")
+            abort(401) 
         if not self._custom_callback and customstate:
             raise ValueError('Custom State is only avilable with a custom '
                              'handler')
@@ -832,7 +885,6 @@ class OpenIDConnect(object):
                 token_info = {'active': False}
                 logger.error('ERROR: Unable to get token info')
                 logger.error(str(ex))
-
             valid_token = token_info.get('active', False)
 
             if 'aud' in token_info and \
@@ -910,8 +962,7 @@ class OpenIDConnect(object):
             def decorated(*args, **kwargs):
                 token = None
                 if 'Authorization' in request.headers and request.headers['Authorization'].startswith('Bearer '):
-                    token = request.headers['Authorization'].split(None, 1)[
-                        1].strip()
+                    token = request.headers['Authorization'].split(None, 1)[1].strip()
                 if 'access_token' in request.form:
                     token = request.form['access_token']
                 elif 'access_token' in request.args:
@@ -967,16 +1018,6 @@ class OpenIDConnect(object):
             issuer = current_app.config['OIDC_PROVIDER']
             if issuer is None:
                 raise Exception('No \'op_uri\' defined in client_secrets or OIDC_PROVIDER set.')
-
-            #disco = discover_OP_information(issuer, self.httpFactory)
-            #jwks_uri = disco['jwks_uri']
-
-            #if jwks_uri is None:
-            #    raise Exception('No \'jwks_uri\' available in the openid-configuration returned by the issuer.')
-
-            #jwks = retrieve_jwks(jwks_uri, self.httpFactory)
-            #if jwks is None:
-            #    raise Exception('The {0} endpoint returned no valid JWKs' % jwks_uri)
 
             payload = validate_token(token, issuer=issuer, audience=self.client_secrets['redirect_uris'], client_ids=self.client_secrets['client_id'])
             payload['active'] = True  # Fake introspection response
