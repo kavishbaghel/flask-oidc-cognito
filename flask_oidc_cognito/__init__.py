@@ -37,11 +37,11 @@ import calendar
 from six.moves.urllib.parse import urlencode
 from flask import Flask, request, session, redirect, url_for, g, current_app, abort
 from oauth2client.client import flow_from_clientsecrets, OAuth2WebServerFlow,\
-    AccessTokenRefreshError, OAuth2Credentials
+    AccessTokenRefreshError, OAuth2Credentials, AccessTokenCredentialsError
 import httplib2
 from itsdangerous import JSONWebSignatureSerializer, BadSignature, SignatureExpired
 
-from .utils import _json_loads
+from .utils import _json_loads, verify_exp
 from .discovery import discover_OP_information
 from .jwks import retrieve_jwks
 from .jwt import validate_token
@@ -298,13 +298,22 @@ class OpenIDConnect(object):
         """
         try:
             if self._access_token:
+                logger.debug("Found api access token")
                 return self._access_token
             credentials = OAuth2Credentials.from_json(
                 self.credentials_store[g.oidc_id_token['sub']])
-            return credentials.access_token
-        except KeyError:
+            logger.debug("Getting access token from credential store")
+            logger.debug(str(credentials.to_json()))
+            access_token = credentials.access_token
+            if not self.validate_token(access_token):
+               raise AccessTokenCredentialsError(
+                  "The access_token is expired or invalid and can't be refreshed.")
+            return access_token
+        except (KeyError, AccessTokenCredentialsError) as e:
             logger.debug("Expired ID token, credentials missing",
                          exc_info=True)
+            if not self.is_api_request():
+               return self.redirect_to_auth_server(request.url)
             return None
 
     def get_refresh_token(self):
@@ -363,7 +372,7 @@ class OpenIDConnect(object):
                 })
 
         info = _json_loads(content)
-        if access_token:
+        if access_token and hasattr(g, 'oidc_token_info'):
            info.update(g.oidc_token_info)
         g._oidc_userinfo = info
         logger.debug('Retrieved user info: %s' % info)
@@ -513,6 +522,7 @@ class OpenIDConnect(object):
             try:
                 credentials = OAuth2Credentials.from_json(
                     self.credentials_store[id_token['sub']])
+                logger.debug(str(credentials.to_json()))
             except KeyError:
                 logger.debug("Expired ID token, credentials missing",
                              exc_info=True)
@@ -536,8 +546,11 @@ class OpenIDConnect(object):
                             credentials.token_expiry.timetuple())
                 self.credentials_store[id_token['sub']] = credentials.to_json()
                 print(self.credentials_store[id_token['sub']])
+                if not self._is_id_token_valid(id_token):
+                   raise AccessTokenCredentialsError(
+                          "The access_token is expired or invalid and can't be refreshed.")
                 self._set_cookie_id_token(id_token)
-            except AccessTokenRefreshError:
+            except (AccessTokenRefreshError, AccessTokenCredentialsError) as e:
                 # Can't refresh. Wipe credentials and redirect user to IdP
                 # for re-authentication.
                 logger.debug("Expired ID token, can't refresh credentials",
@@ -547,6 +560,7 @@ class OpenIDConnect(object):
 
         # make ID token available to views
         g.oidc_id_token = id_token
+        self._retrieve_userinfo()
 
         return None
 
@@ -673,6 +687,9 @@ class OpenIDConnect(object):
         # if the user has an ID token, it's invalid, or we wouldn't be here
         self._set_cookie_id_token(None)
         return redirect(auth_url)
+    
+    def is_api_request(self):
+        return self._api_request
 
     def _is_id_token_valid(self, id_token):
         """
